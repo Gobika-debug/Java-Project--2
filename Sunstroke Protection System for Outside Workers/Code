@@ -1,0 +1,175 @@
+import java.util.*;
+// Worker class to track location and temperature
+class Worker {
+    String name;
+    int id, location, temperature;
+    Worker(String name, int id, int location, int temperature) {
+        this.name = name;
+        this.id = id;
+        this.location = location;
+        this.temperature = temperature;
+    }
+    void displayInfo() {
+        System.out.println("Worker: " + name + " | ID: " + id + " | Location: " + location + " | Temperature: " + temperature + "°C");
+    }
+}
+
+
+// Graph implementation for safest path routing using Dijkstra’s Algorithm
+class Environment {
+    private int locations;
+    private List<List<Node>> graph;
+    class Node implements Comparable<Node> {
+        int location, heatExposure;
+        Node(int location, int heatExposure) {
+            this.location = location;
+            this.heatExposure = heatExposure;
+        }
+        public int compareTo(Node other) {
+            return Integer.compare(this.heatExposure, other.heatExposure);
+        }
+    }
+    public Environment(int locations) {
+        this.locations = locations;
+        graph = new ArrayList<>();
+        for (int i = 0; i < locations; i++) {
+            graph.add(new ArrayList<>());
+        }
+    }
+
+
+    void addPath(int u, int v, int heatExposure) {
+        graph.get(u).add(new Node(v, heatExposure));
+        graph.get(v).add(new Node(u, heatExposure));
+    }
+    void findSafestPath(int source) {
+        PriorityQueue<Node> pq = new PriorityQueue<>();
+        int[] minExposure = new int[locations];
+        Arrays.fill(minExposure, Integer.MAX_VALUE);
+        minExposure[source] = 0;
+        pq.add(new Node(source, 0));
+        while (!pq.isEmpty()) {
+            Node current = pq.poll();
+            int loc = current.location;
+            int exposure = current.heatExposure;
+            for (Node neighbor : graph.get(loc)) {
+                int newExposure = exposure + neighbor.heatExposure;
+                if (newExposure < minExposure[neighbor.location]) {
+                    minExposure[neighbor.location] = newExposure;
+                    pq.add(new Node(neighbor.location, newExposure));
+                }
+            }
+        }
+
+
+        System.out.println("\nOptimal Sun-Protected Routes:");
+        for (int i = 0; i < locations; i++) {
+            System.out.println("Location " + i + " -> Min Heat Exposure: " + minExposure[i]);
+        }
+    }
+}
+
+
+// Sliding Window Approach for Workload & Break Time Calculation
+class WorkloadManager {
+    private int[] workload;
+    private int windowSize;
+    private int breakThreshold;
+    public WorkloadManager(int[] workload, int windowSize, int breakThreshold) {
+        this.workload = workload;
+        this.windowSize = windowSize;
+        this.breakThreshold = breakThreshold;
+    }
+
+
+    int calculateBreakTime() {
+        int totalBreaks = 0;
+        int sum = 0;
+        for (int i = 0; i < workload.length; i++) {
+            sum += workload[i];
+
+            if (i >= windowSize) {
+                sum -= workload[i - windowSize];
+            }
+            if (i >= windowSize - 1 && sum > breakThreshold) {
+                totalBreaks++;
+                System.out.println("Break recommended after hour: " + (i + 1));
+            }
+        }
+        return totalBreaks;
+    }
+}
+
+
+// IoT Monitoring for real-time worker data
+class IoTMonitor {
+    int getTemperature(Scanner scanner) {
+        System.out.print("Enter current temperature (°C): ");
+        return scanner.nextInt();
+    }
+}
+
+
+// Main Execution
+public class Main {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        // IoT Monitor for Worker Data
+        IoTMonitor monitor = new IoTMonitor();
+        // Worker tracking
+        System.out.print("Enter number of workers: ");
+        int workerCount = scanner.nextInt();
+        Worker[] workers = new Worker[workerCount];
+        for (int i = 0; i < workerCount; i++) {
+            System.out.print("\nEnter Worker Name: ");
+            String name = scanner.next();
+            System.out.print("Enter Worker ID: ");
+            int id = scanner.nextInt();
+            System.out.print("Enter Worker Location: ");
+            int location = scanner.nextInt();
+            int temperature = monitor.getTemperature(scanner);
+            workers[i] = new Worker(name, id, location, temperature);
+        }
+        System.out.println("\nWorker Information:");
+        for (Worker worker : workers) {
+            worker.displayInfo();
+        }
+
+
+        // Environment Graph
+        System.out.print("\nEnter number of locations: ");
+        int locations = scanner.nextInt();
+        Environment env = new Environment(locations);
+        System.out.print("Enter number of paths: ");
+        int paths = scanner.nextInt();
+        System.out.println("Enter paths (Format: start end heat_exposure):");
+        for (int i = 0; i < paths; i++) {
+            int u = scanner.nextInt();
+            int v = scanner.nextInt();
+            int heatExposure = scanner.nextInt();
+            env.addPath(u, v, heatExposure);
+        }
+
+
+        System.out.print("Enter starting location for safest path search: ");
+        int startLocation = scanner.nextInt();
+        env.findSafestPath(startLocation);
+        // Workload & Break Management (Sliding Window Approach)
+        System.out.print("\nEnter number of workload hours: ");
+        int workloadSize = scanner.nextInt();
+        int[] workload = new int[workloadSize];
+        System.out.println("Enter workload values for each hour:");
+        for (int i = 0; i < workloadSize; i++) {
+            workload[i] = scanner.nextInt();
+        }
+
+
+        System.out.print("Enter window size for workload monitoring: ");
+        int windowSize = scanner.nextInt();
+        System.out.print("Enter workload threshold for break recommendation: ");
+        int breakThreshold = scanner.nextInt();
+        WorkloadManager manager = new WorkloadManager(workload, windowSize, breakThreshold);
+        int totalBreaks = manager.calculateBreakTime();
+        System.out.println("\nTotal Breaks Suggested: " + totalBreaks); 
+    }
+}
